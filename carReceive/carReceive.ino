@@ -1,6 +1,5 @@
 #include <SPI.h>
 #include <WiFi101.h>
-// #include <avr/wdt.h>
 
 
 /********** WIFI **********/
@@ -53,7 +52,7 @@ int COLOR_OUT = 10;
 enum CAR_STATE {
   WAIT_FOR_INPUT,
   MOTOR_COMMAND,
-  WAIT_AFTER_RED  
+  STOP_AFTER_RED  
 };
 
 enum COLOR {
@@ -71,7 +70,7 @@ const int RED_STOP_TIME = 2000;
 const int GREEN_BOOST_TIME = 1000;
 const int BLUE_SLOW_TIME = 1000;
 
-const int MOTOR_DEFAULT_SPEED = 170;
+const int MOTOR_DEFAULT_SPEED = 180;
 const int MOTOR_BOOST_SPEED = 250;
 const int MOTOR_SLOW_SPEED = 100;
 
@@ -84,9 +83,25 @@ int CURR_DIR;
 COLOR CURR_COLOR;
 
 
+/********** TESTING VARIABLES **********/
+#define TEST true
+
+struct fsmVariables {
+  int lastRed;
+  int currDir;
+  COLOR currColor;
+};
+
+
 void setup() {
   Serial.begin(9600);
-  // while (!Serial); // wait for serial port to connect. Needed for native USB port only
+  while (!Serial); // wait for serial port to connect. Needed for native USB port only
+  initPins();
+  initFSM();
+
+  if (TEST) {
+    runTests();
+  }
 
   // attempt to connect to WiFi network:
   while ( status != WL_CONNECTED) {
@@ -107,10 +122,6 @@ void setup() {
   }
 
   Serial.println("Connected to server");
-
-  initPins();
-  initFSM();
-  // wdt_enable(WDTO_250MS);
 }
 
 void loop() {
@@ -132,8 +143,6 @@ void loop() {
   }
 
   updateFSM(direction, color, millis());
-
-  // wdt_reset();
 }
 
 void updateFSM(int direction, COLOR color, int time) {
@@ -275,4 +284,107 @@ void commandMotor(char direction, COLOR color) {
     digitalWrite(LEFT_MOTOR_PIN1, LOW);
     digitalWrite(LEFT_MOTOR_PIN2, LOW);
   }
+}
+
+void testFSM(int testNum, int dir, COLOR color, int time, CAR_STATE startState, CAR_STATE endState, fsmVariables startVars, fsmVariables endVars) {
+  Serial.print("TEST CASE ");
+  Serial.println(testNum);
+
+  Serial.println("Testing with input of: ");
+  
+  Serial.print("\tdirection: \t");
+  Serial.println(dir, BIN);
+
+  Serial.print("\tcolor: \t\t");
+  Serial.println(color);
+
+  Serial.print("\ttime: \t\t");
+  Serial.println(time);
+
+  currState = startState;
+  LAST_RED = startVars.lastRed;
+  CURR_DIR = startVars.currDir;
+  CURR_COLOR = startVars.currColor;
+
+  updateFSM(dir, color, time);
+
+  bool succeeded = true;
+
+  Serial.println("Variable results: ");
+
+  Serial.print("\tlastRed: \t");
+  Serial.print(startVars.lastRed);
+  Serial.print("\t -> \t");
+  Serial.print(LAST_RED);
+  if (LAST_RED != endVars.lastRed) {
+    Serial.print(" [INCORRECT expected ");
+    Serial.print(endVars.lastRed);
+    Serial.print("]");
+    succeeded = false;
+  }
+  Serial.println("");
+
+  Serial.print("\tcurrDir: \t");
+  Serial.print(startVars.currDir);
+  Serial.print("\t -> \t");
+  Serial.print(CURR_DIR);
+  if (CURR_DIR != endVars.currDir) {
+    Serial.print(" [INCORRECT expected ");
+    Serial.print(endVars.currDir);
+    Serial.print("]");
+    succeeded = false;
+  }
+  Serial.println("");
+
+  Serial.print("\tcurrColor: \t");
+  Serial.print(startVars.currColor);
+  Serial.print("\t -> \t");
+  Serial.print(CURR_COLOR);
+  if (CURR_COLOR != endVars.currColor) {
+    Serial.print(" [INCORRECT expected ");
+    Serial.print(endVars.currColor);
+    Serial.print("]");
+    succeeded = false;
+  }
+  Serial.println("");
+
+  Serial.println("State change: ");
+  Serial.print(getStateEnumName(startState));
+  Serial.print("\t -> \t");
+  Serial.print(getStateEnumName(currState));
+  if (currState != endState) {
+    Serial.print(" [INCORRECT expected ");
+    Serial.print(getStateEnumName(endState));
+    Serial.print("]");
+    succeeded = false;
+  }
+  Serial.println("");
+  
+  Serial.print("Test ");
+  Serial.print(testNum);
+  Serial.print(" ");
+  Serial.println(succeeded ? "SUCCEEDED" : "FAILED");
+  Serial.println("");
+}
+
+String getStateEnumName(CAR_STATE state) {
+  switch(state) {
+    case WAIT_FOR_INPUT:
+      return "WAIT_FOR_INPUT";
+    case MOTOR_COMMAND:
+      return "MOTOR_COMMAND";
+    case STOP_AFTER_RED:
+      return "STOP_AFTER_RED";
+    default:
+      return "INVALID STATE";
+  }
+}
+
+void runTests() {
+  Serial.println("Running tests...\n");
+
+  testFSM(1, 0, NONE, millis(), WAIT_FOR_INPUT, MOTOR_COMMAND, {millis(), 0, NONE},	{millis(), 0, NONE});
+  testFSM(2, 0b1010, NONE, millis(), WAIT_FOR_INPUT, MOTOR_COMMAND, {millis(), 0, NONE},	{millis(), 0b1010, NONE});
+
+  while(true);
 }
