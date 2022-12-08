@@ -53,8 +53,7 @@ int COLOR_OUT = 10;
 enum CAR_STATE {
   WAIT_FOR_INPUT,
   MOTOR_COMMAND,
-  STOP,
-  WAIT_AFTER_STOP  
+  WAIT_AFTER_RED  
 };
 
 enum COLOR {
@@ -139,13 +138,13 @@ void loop() {
 
 void updateFSM(int direction, COLOR color, int time) {
   if (currState == WAIT_FOR_INPUT) {
-    if ((color == RED) && (time - LAST_RED > RED_THRESHOLD)) {
+    if ((color == RED) && (time - LAST_RED > RED_THRESHOLD)) { // transition 1-3
       commandMotor(direction, color);
       LAST_RED = time;      
-      currState = STOP;
+      currState = STOP_AFTER_RED;
       return;
     }
-    if ((color != RED) || ((color == RED) && (time - LAST_RED <= RED_THRESHOLD))) {
+    if ((color != RED) || ((color == RED) && (time - LAST_RED <= RED_THRESHOLD))) { // transition 1-2
       CURR_DIR = direction;
       CURR_COLOR = color;
       currState = MOTOR_COMMAND;
@@ -154,19 +153,14 @@ void updateFSM(int direction, COLOR color, int time) {
     return;
   }
 
-  if (currState == MOTOR_COMMAND) {
+  if (currState == MOTOR_COMMAND) { // transition 2-1
     commandMotor(CURR_DIR, CURR_COLOR);
     currState = WAIT_FOR_INPUT;
     return;
   }
 
-  if (currState == STOP) {
-    currState = WAIT_AFTER_STOP;
-    return;
-  }
-
-  if (currState == WAIT_AFTER_STOP) {
-    if (time - LAST_RED > RED_STOP_TIME) {
+  if (currState == STOP_AFTER_RED) {
+    if (time - LAST_RED > RED_STOP_TIME) { // transition 3-1
       currState = WAIT_FOR_INPUT;
       return;
     }
