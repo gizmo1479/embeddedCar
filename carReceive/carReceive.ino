@@ -90,7 +90,7 @@ COLOR CURR_COLOR;
 
 /********** TESTING VARIABLES **********/
 
-#define TEST true
+#define TEST false
 
 struct fsmVariables {
   int lastRed;
@@ -147,7 +147,7 @@ void initFSM() {
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial);  // wait for serial port to connect. Needed for native USB port only
+  if (TEST) while (!Serial);  // wait for serial port to connect. Needed for native USB port only
   initPins();
   initFSM();
 
