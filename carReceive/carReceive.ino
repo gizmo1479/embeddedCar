@@ -337,7 +337,6 @@ void setMotors(char direction, COLOR color) {
 }
 
 
-
 void powerLeftMotors(motorFunction function) {
   if (TEST) {
     currOutput.leftMotor = function;
@@ -378,8 +377,8 @@ void powerRightMotors(motorFunction function) {
       break;
   }
 
-  digitalWrite(LEFT_MOTOR_PIN1, motor1);
-  digitalWrite(LEFT_MOTOR_PIN2, motor2);
+  digitalWrite(RIGHT_MOTOR_PIN1, motor1);
+  digitalWrite(RIGHT_MOTOR_PIN2, motor2);
 }
 
 /********** WATCHDOG CODE ***************************/
