@@ -1,22 +1,18 @@
 #include <SPI.h>
 #include <WiFi101.h>
-#include "common.h"
 
-#define TEST false
+#define TEST false // make true to run tests and run infinite loop
 
-#define S_SSID "Kal" // name of network trying to connect to
-#define SPASS "R3slif3sux42069"
 #define B_SSID "Brown-Guest"
 char bssid[] = B_SSID;
-char ssid[] = S_SSID;        // your network SSID (name)
-char pass[] = SPASS;
+
 int status = WL_IDLE_STATUS;     // the WiFi server's status
 WiFiServer server(8888); // Our server on port 8888
 
 int RESET_PIN = 2;
-int FORWARD_PIN = 4; // button pin to move forward
+int FORWARD_PIN = 5; // button pin to move forward
 int BACKWARD_PIN = 7; // button pin to move backward
-int LEFT_PIN = 5;
+int LEFT_PIN = 0;
 int RIGHT_PIN = 6;
 
 enum SERV_STATE {
@@ -25,6 +21,9 @@ enum SERV_STATE {
 };
 
 SERV_STATE currState = WAIT;
+
+
+/*********** BUTTON AND INTERRUPTS ************/
 
 #define R 0x1; 
 #define R_BIT 0;
@@ -40,9 +39,6 @@ volatile uint8_t buttons = 0;
 volatile bool canInterruptF;
 volatile unsigned long lastInterruptF = 0;
 void updateButtonF() {
-
-  // TODO: just keep track of last one you pressed duh
- // int t = millis();
   if (canInterruptF) {
     lastInterruptF = millis();
     canInterruptF = false;
@@ -82,6 +78,7 @@ void updateButtonR() {
 }
 
 
+/*********** MAIN CODE ************/
 
 void setup() {
   //Initialize serial and wait for port to open:
@@ -89,6 +86,10 @@ void setup() {
   Serial.begin(9600);
   while (!Serial) {
     ; // wait for serial port to connect.
+  }
+
+   if (TEST) {
+    runTests();
   }
 
   // attempt to connect to WiFi network:
@@ -116,6 +117,11 @@ void updateFsm(int b) {
       return;
     }
 
+    WiFiClient client = server.available();
+    if (client) {
+      Serial.println("woooo client");
+    }
+
     return;
   }
 
@@ -125,15 +131,15 @@ void updateFsm(int b) {
       return;
     }
 
-    WiFiClient client = server.available(); // should this be here??
+    WiFiClient client = server.available();
     if (client) {
       Serial.println("woooo client");
     }
 
-    delay(90);
+    //delay(90);
     Serial.println(b, BIN);
     server.write(b);
-    return;172.18.142.238
+    return;
   }
 }
 
@@ -147,12 +153,7 @@ void checkReset() {
 }
 
 void loop() {
-  if (TEST) {
-    runTests();
-  }
-  
   delay(20);
-
   checkReset();
 
   int t = millis();
@@ -197,6 +198,10 @@ void startServer() {
   Serial.println(myAddr);
   Serial.println("Now accepting clients");
 }
+
+
+/**************** TESTING ************************/
+
 
 void testFSM(int buttons, SERV_STATE startState, SERV_STATE endState) {
 
