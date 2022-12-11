@@ -3,19 +3,16 @@
 
 #define TEST false // make true to run tests and run infinite loop
 
-#define S_SSID "Kal" // name of network trying to connect to
-#define SPASS "R3slif3sux42069"
 #define B_SSID "Brown-Guest"
 char bssid[] = B_SSID;
-char ssid[] = S_SSID;        // your network SSID (name)
-char pass[] = SPASS;
+
 int status = WL_IDLE_STATUS;     // the WiFi server's status
 WiFiServer server(8888); // Our server on port 8888
 
 int RESET_PIN = 2;
-int FORWARD_PIN = 4; // button pin to move forward
+int FORWARD_PIN = 5; // button pin to move forward
 int BACKWARD_PIN = 7; // button pin to move backward
-int LEFT_PIN = 5;
+int LEFT_PIN = 0;
 int RIGHT_PIN = 6;
 
 enum SERV_STATE {
@@ -42,9 +39,6 @@ volatile uint8_t buttons = 0;
 volatile bool canInterruptF;
 volatile unsigned long lastInterruptF = 0;
 void updateButtonF() {
-
-  // TODO: just keep track of last one you pressed duh
- // int t = millis();
   if (canInterruptF) {
     lastInterruptF = millis();
     canInterruptF = false;
@@ -123,6 +117,11 @@ void updateFsm(int b) {
       return;
     }
 
+    WiFiClient client = server.available();
+    if (client) {
+      Serial.println("woooo client");
+    }
+
     return;
   }
 
@@ -132,12 +131,12 @@ void updateFsm(int b) {
       return;
     }
 
-    WiFiClient client = server.available(); // should this be here??
+    WiFiClient client = server.available();
     if (client) {
       Serial.println("woooo client");
     }
 
-    delay(90);
+    //delay(90);
     Serial.println(b, BIN);
     server.write(b);
     return;
