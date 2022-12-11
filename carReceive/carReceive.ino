@@ -10,7 +10,7 @@ char ssid[] = SECRET_SSID;  // your network SSID (name)
 int status = WL_IDLE_STATUS;  // the WiFi radio's status
 
 WiFiClient client;
-IPAddress ip(172, 18, 148, 85);  // brown guest
+IPAddress ip(172, 18, 147, 65);  // brown guest
 #define connPort 8888
 
 
@@ -67,7 +67,7 @@ const int GREEN_BOOST_TIME = 1000;
 const int BLUE_SLOW_TIME = 1000;
 
 const int MOTOR_DEFAULT_SPEED = 170;
-const int MOTOR_BOOST_SPEED = 250;
+const int MOTOR_BOOST_SPEED = 255;
 const int MOTOR_SLOW_SPEED = 100;
 
 
@@ -189,9 +189,9 @@ void loop() {
     Serial.println("disconnected, attempting to reconnect");
     client.connect(ip, connPort);
     updateFSM(0, NONE, millis());
-    delay(1000);
+    delay(500);
   }
-
+//  Serial.println("bark");
   WDT_pet();
   COLOR color = pollColorSensor();
   char direction = 0;
@@ -271,12 +271,15 @@ COLOR pollColorSensor() {
   int blueFrequency = pulseIn(COLOR_OUT, LOW);
 
   if (redFrequency < blueFrequency && redFrequency <= greenFrequency && redFrequency < 1200) {
+    Serial.println("RED");
       return RED;
   }
   else if (blueFrequency < greenFrequency && blueFrequency < redFrequency && blueFrequency < 2000) {
+    Serial.println("BLUE");
       return BLUE;
   }
   else if (greenFrequency < blueFrequency && greenFrequency - redFrequency <= 400) {
+    Serial.println("GREEN");
       return GREEN;
   }
   else {
